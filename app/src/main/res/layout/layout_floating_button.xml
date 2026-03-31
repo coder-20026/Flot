@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/spacing_sm">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <!-- Main Capture Button -->
+        <FrameLayout
+            android:layout_width="@dimen/floating_button_size"
+            android:layout_height="@dimen/floating_button_size"
+            android:background="@drawable/bg_floating_button"
+            android:elevation="@dimen/elevation_lg"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@string/cd_floating_button">
+
+            <ImageView
+                android:id="@+id/ivCapture"
+                android:layout_width="@dimen/floating_button_icon_size"
+                android:layout_height="@dimen/floating_button_icon_size"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_capture"
+                android:contentDescription="@null"
+                app:tint="@color/fab_icon" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progressIndicator"
+                android:layout_width="@dimen/icon_size_lg"
+                android:layout_height="@dimen/icon_size_lg"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorColor="@color/fab_icon"
+                app:indicatorSize="28dp"
+                app:trackThickness="3dp"
+                tools:visibility="visible" />
+
+        </FrameLayout>
+
+        <!-- Realtime Mode Toggle -->
+        <FrameLayout
+            android:id="@+id/btnRealtime"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:background="@drawable/bg_icon_button"
+            android:elevation="@dimen/elevation_md"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@string/settings_realtime_mode">
+
+            <ImageView
+                android:layout_width="@dimen/icon_size_sm"
+                android:layout_height="@dimen/icon_size_sm"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_realtime"
+                android:contentDescription="@null"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+        </FrameLayout>
+
+        <!-- Status Indicator -->
+        <View
+            android:id="@+id/statusIndicator"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:background="@drawable/bg_status_indicator"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+</FrameLayout>

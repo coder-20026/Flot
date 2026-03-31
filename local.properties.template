@@ -1,0 +1,13 @@
+# This file should be copied to local.properties and configured
+# Do NOT commit local.properties to version control
+
+# SDK Location (automatically set by Android Studio)
+# sdk.dir=/path/to/android/sdk
+
+# NDK Location (optional)
+# ndk.dir=/path/to/android/ndk
+
+# For Windows users, use forward slashes or escaped backslashes:
+# sdk.dir=C:/Users/username/AppData/Local/Android/Sdk
+# OR
+# sdk.dir=C:\\Users\\username\\AppData\\Local\\Android\\Sdk

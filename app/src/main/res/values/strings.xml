@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Coordinate Extractor</string>
+    <string name="app_description">Extract GPS coordinates from screen with OCR</string>
+
+    <!-- Main Screen -->
+    <string name="welcome_title">Coordinate Extractor</string>
+    <string name="welcome_subtitle">Extract GPS coordinates from any screen</string>
+    <string name="btn_start_service">Start Floating Button</string>
+    <string name="btn_stop_service">Stop Service</string>
+    <string name="btn_settings">Settings</string>
+
+    <!-- Permissions -->
+    <string name="permission_overlay_title">Overlay Permission Required</string>
+    <string name="permission_overlay_desc">Allow drawing over other apps to show the floating capture button</string>
+    <string name="permission_notification_title">Notification Permission</string>
+    <string name="permission_notification_desc">Required for foreground service notifications</string>
+    <string name="btn_grant_permission">Grant Permission</string>
+    <string name="permission_denied">Permission denied</string>
+
+    <!-- Floating Button -->
+    <string name="floating_btn_capture">Capture</string>
+    <string name="floating_btn_description">Tap to capture coordinates</string>
+    <string name="long_press_hint">Long press to drag</string>
+
+    <!-- Capture -->
+    <string name="capturing">Capturing screen…</string>
+    <string name="processing">Processing image…</string>
+    <string name="extracting">Extracting coordinates…</string>
+
+    <!-- Results -->
+    <string name="result_title">Extracted Coordinates</string>
+    <string name="result_raw_text">Raw Text</string>
+    <string name="result_coordinates">Coordinates</string>
+    <string name="no_coordinates_found">No coordinates found</string>
+    <string name="btn_copy">Copy</string>
+    <string name="btn_open_maps">Open in Maps</string>
+    <string name="btn_share">Share</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_realtime_mode">Real-time Mode</string>
+    <string name="settings_realtime_desc">Continuously capture and extract coordinates</string>
+    <string name="settings_roi_width">ROI Width (%)</string>
+    <string name="settings_roi_height">ROI Height (%)</string>
+    <string name="settings_capture_interval">Capture Interval (ms)</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_about">About</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Capture Service</string>
+    <string name="notification_channel_desc">Shows when the coordinate capture service is running</string>
+    <string name="notification_title">Coordinate Extractor Active</string>
+    <string name="notification_text">Tap floating button to capture coordinates</string>
+    <string name="notification_action_stop">Stop</string>
+
+    <!-- Errors -->
+    <string name="error_capture_failed">Screen capture failed</string>
+    <string name="error_ocr_failed">OCR processing failed</string>
+    <string name="error_no_permission">Permission not granted</string>
+    <string name="error_service_failed">Service failed to start</string>
+    <string name="error_unknown">An unexpected error occurred</string>
+
+    <!-- Real-time Mode -->
+    <string name="realtime_active">Real-time mode active</string>
+    <string name="realtime_paused">Real-time mode paused</string>
+
+    <!-- Content Descriptions -->
+    <string name="cd_floating_button">Floating capture button</string>
+    <string name="cd_close_button">Close</string>
+    <string name="cd_settings_button">Settings</string>
+    <string name="cd_copy_button">Copy coordinates</string>
+    <string name="cd_maps_button">Open in Google Maps</string>
+</resources>

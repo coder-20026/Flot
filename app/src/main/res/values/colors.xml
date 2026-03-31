@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Brand Colors - Deep Blue Theme -->
+    <color name="primary">#1565C0</color>
+    <color name="primary_variant">#0D47A1</color>
+    <color name="primary_light">#42A5F5</color>
+    <color name="on_primary">#FFFFFF</color>
+
+    <!-- Secondary Colors - Teal Accent -->
+    <color name="secondary">#00897B</color>
+    <color name="secondary_variant">#00695C</color>
+    <color name="on_secondary">#FFFFFF</color>
+
+    <!-- Tertiary - Amber for highlights -->
+    <color name="tertiary">#FFA000</color>
+    <color name="on_tertiary">#000000</color>
+
+    <!-- Background Colors -->
+    <color name="background">#FAFAFA</color>
+    <color name="on_background">#1C1B1F</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="on_surface">#1C1B1F</color>
+    <color name="surface_variant">#E7E0EC</color>
+    <color name="on_surface_variant">#49454E</color>
+
+    <!-- Error Colors -->
+    <color name="error">#B3261E</color>
+    <color name="on_error">#FFFFFF</color>
+    <color name="error_container">#F9DEDC</color>
+    <color name="on_error_container">#410E0B</color>
+
+    <!-- Success Colors -->
+    <color name="success">#2E7D32</color>
+    <color name="on_success">#FFFFFF</color>
+
+    <!-- Outline Colors -->
+    <color name="outline">#79747E</color>
+    <color name="outline_variant">#CAC4D0</color>
+
+    <!-- Floating Button Colors -->
+    <color name="fab_background">#1565C0</color>
+    <color name="fab_icon">#FFFFFF</color>
+    <color name="fab_ripple">#42A5F5</color>
+
+    <!-- Result Card Colors -->
+    <color name="card_background">#FFFFFF</color>
+    <color name="card_border">#E0E0E0</color>
+    <color name="coordinate_text">#1565C0</color>
+
+    <!-- Overlay Colors -->
+    <color name="overlay_scrim">#80000000</color>
+    <color name="status_indicator_active">#4CAF50</color>
+    <color name="status_indicator_inactive">#9E9E9E</color>
+
+    <!-- Dark Theme Colors -->
+    <color name="primary_dark">#90CAF9</color>
+    <color name="primary_variant_dark">#42A5F5</color>
+    <color name="on_primary_dark">#003258</color>
+
+    <color name="secondary_dark">#80CBC4</color>
+    <color name="on_secondary_dark">#003731</color>
+
+    <color name="background_dark">#1C1B1F</color>
+    <color name="on_background_dark">#E6E1E5</color>
+    <color name="surface_dark">#1C1B1F</color>
+    <color name="on_surface_dark">#E6E1E5</color>
+    <color name="surface_variant_dark">#49454F</color>
+    <color name="on_surface_variant_dark">#CAC4D0</color>
+
+    <color name="error_dark">#F2B8B5</color>
+    <color name="on_error_dark">#601410</color>
+
+    <color name="outline_dark">#938F99</color>
+    <color name="outline_variant_dark">#49454F</color>
+
+    <color name="card_background_dark">#2D2D2D</color>
+    <color name="card_border_dark">#424242</color>
+</resources>
