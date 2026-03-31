@@ -89,19 +89,30 @@ class MainViewModel @Inject constructor(
      * Start the floating overlay service
      */
     fun startFloatingService() {
+        android.util.Log.d("MainViewModel", "startFloatingService called")
+        
         if (!_uiState.value.allPermissionsGranted) {
+            android.util.Log.d("MainViewModel", "Permissions not granted, showing dialog")
             _uiState.update { it.copy(showPermissionDialog = true) }
             return
         }
 
-        val serviceIntent = Intent(context, FloatingOverlayService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
-        } else {
-            context.startService(serviceIntent)
-        }
+        try {
+            val serviceIntent = Intent(context, FloatingOverlayService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+                android.util.Log.d("MainViewModel", "startForegroundService called")
+            } else {
+                context.startService(serviceIntent)
+                android.util.Log.d("MainViewModel", "startService called")
+            }
 
-        _uiState.update { it.copy(isServiceRunning = true) }
+            _uiState.update { it.copy(isServiceRunning = true) }
+            android.util.Log.d("MainViewModel", "Service started, state updated")
+        } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "Failed to start service: ${e.message}", e)
+            _uiState.update { it.copy(error = "Failed to start service: ${e.message}") }
+        }
     }
 
     /**
@@ -121,19 +132,27 @@ class MainViewModel @Inject constructor(
      * Initialize screen capture with MediaProjection result
      */
     fun initializeCapture(resultCode: Int, data: Intent) {
-        val serviceIntent = Intent(context, ScreenCaptureService::class.java).apply {
-            action = ScreenCaptureService.ACTION_START_CAPTURE
-            putExtra(ScreenCaptureService.EXTRA_RESULT_CODE, resultCode)
-            putExtra(ScreenCaptureService.EXTRA_RESULT_DATA, data)
-        }
+        android.util.Log.d("MainViewModel", "initializeCapture called with resultCode=$resultCode")
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
-        } else {
-            context.startService(serviceIntent)
-        }
+        try {
+            val serviceIntent = Intent(context, ScreenCaptureService::class.java).apply {
+                action = ScreenCaptureService.ACTION_START_CAPTURE
+                putExtra(ScreenCaptureService.EXTRA_RESULT_CODE, resultCode)
+                putExtra(ScreenCaptureService.EXTRA_RESULT_DATA, data)
+            }
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+                android.util.Log.d("MainViewModel", "ScreenCaptureService started as foreground")
+            } else {
+                context.startService(serviceIntent)
+                android.util.Log.d("MainViewModel", "ScreenCaptureService started")
+            }
 
-        _uiState.update { it.copy(hasCapturePermission = true) }
+            _uiState.update { it.copy(hasCapturePermission = true) }
+        } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "Failed to initialize capture: ${e.message}", e)
+        }
     }
 
     /**
