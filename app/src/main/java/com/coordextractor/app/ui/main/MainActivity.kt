@@ -61,8 +61,13 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            // First initialize capture (this starts ScreenCaptureService and initializes MediaProjection)
             viewModel.initializeCapture(result.resultCode, result.data!!)
-            viewModel.startFloatingService()
+            
+            // Delay starting floating service to ensure CaptureManager is initialized
+            binding.root.postDelayed({
+                viewModel.startFloatingService()
+            }, 500)
         } else {
             Toast.makeText(this, R.string.error_no_permission, Toast.LENGTH_SHORT).show()
         }
