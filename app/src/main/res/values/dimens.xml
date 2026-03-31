@@ -58,4 +58,7 @@
     <integer name="roi_width_percent_default">30</integer>
     <integer name="roi_height_percent_default">25</integer>
     <integer name="capture_interval_default">500</integer>
+
+    <!-- Card Elevation -->
+    <dimen name="elevation_card">4dp</dimen>
 </resources>
