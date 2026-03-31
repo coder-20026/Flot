@@ -108,4 +108,26 @@
     <string name="open_in_maps">Open in Maps</string>
     <string name="share">Share</string>
     <string name="delete">Delete</string>
+
+    <!-- Dialog Actions -->
+    <string name="clear_history_confirmation">Are you sure you want to clear all history?</string>
+    <string name="clear">Clear</string>
+    <string name="cancel">Cancel</string>
+    <string name="stop">Stop</string>
+
+    <!-- Format Strings -->
+    <string name="interval_ms_format">%d ms</string>
+    <string name="percent_format">%d%%</string>
+
+    <!-- Share -->
+    <string name="share_coordinates_prefix">Coordinates:</string>
+    <string name="share_raw_text_prefix">Raw Text:</string>
+    <string name="share_via">Share via</string>
+    <string name="error_opening_maps">Unable to open maps</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_description">Shows when the coordinate capture service is running</string>
+    <string name="notification_text_ready">Tap floating button to capture coordinates</string>
+    <string name="notification_text_realtime">Real-time capture mode active</string>
+    <string name="notification_text_capturing">Capturing coordinates...</string>
 </resources>
