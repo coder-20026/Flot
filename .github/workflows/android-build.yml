@@ -2,9 +2,9 @@ name: Android CI/CD
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master]
+    branches: [master]
   workflow_dispatch:
 
 env:
@@ -46,16 +46,23 @@ jobs:
         run: |
           sdkmanager "platform-tools" "platforms;android-${{ env.ANDROID_COMPILE_SDK }}" "build-tools;${{ env.ANDROID_BUILD_TOOLS }}"
 
-      # Setup Gradle wrapper
-      - name: Setup Gradle Wrapper
-        run: |
-          if [ ! -f "gradlew" ]; then
-            gradle wrapper --gradle-version=8.5
-          fi
+      # Setup Gradle
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.5'
 
-      # Make gradlew executable
-      - name: Make Gradlew Executable
-        run: chmod +x ./gradlew
+      # Generate Gradle Wrapper (always regenerate to ensure JAR exists)
+      - name: Generate Gradle Wrapper
+        run: |
+          gradle wrapper --gradle-version=8.5 --distribution-type=bin
+          chmod +x ./gradlew
+
+      # Create local.properties with SDK path
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          cat local.properties
 
       # Cache Gradle dependencies
       - name: Cache Gradle Dependencies
@@ -132,18 +139,15 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Make Gradlew Executable
-        run: chmod +x ./gradlew
-
-      - name: Cache Gradle Dependencies
-        uses: actions/cache@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          gradle-version: '8.5'
+
+      - name: Generate Gradle Wrapper
+        run: |
+          gradle wrapper --gradle-version=8.5 --distribution-type=bin
+          chmod +x ./gradlew
 
       - name: Run Unit Tests
         run: ./gradlew test --no-daemon
