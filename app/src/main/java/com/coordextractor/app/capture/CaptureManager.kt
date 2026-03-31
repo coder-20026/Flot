@@ -71,21 +71,32 @@ class CaptureManager @Inject constructor(
      * Initialize MediaProjection with the result from permission request
      */
     fun initializeProjection(resultCode: Int, data: Intent) {
-        val projectionManager = context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) 
-            as MediaProjectionManager
-        mediaProjection = projectionManager.getMediaProjection(resultCode, data)
-        
-        mediaProjection?.registerCallback(object : MediaProjection.Callback() {
-            override fun onStop() {
-                cleanup()
-            }
-        }, handler)
+        try {
+            val projectionManager = context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) 
+                as MediaProjectionManager
+            mediaProjection = projectionManager.getMediaProjection(resultCode, data)
+            
+            android.util.Log.d("CaptureManager", "MediaProjection initialized: ${mediaProjection != null}")
+            
+            mediaProjection?.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() {
+                    android.util.Log.d("CaptureManager", "MediaProjection stopped")
+                    cleanup()
+                }
+            }, handler)
+        } catch (e: Exception) {
+            android.util.Log.e("CaptureManager", "Failed to initialize projection: ${e.message}")
+        }
     }
 
     /**
      * Check if MediaProjection is initialized and ready
      */
-    fun isInitialized(): Boolean = mediaProjection != null
+    fun isInitialized(): Boolean {
+        val initialized = mediaProjection != null
+        android.util.Log.d("CaptureManager", "isInitialized check: $initialized")
+        return initialized
+    }
 
     /**
      * Capture a single frame from the screen
