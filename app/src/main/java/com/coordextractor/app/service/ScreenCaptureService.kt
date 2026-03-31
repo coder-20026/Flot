@@ -33,23 +33,36 @@ class ScreenCaptureService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        android.util.Log.d("ScreenCaptureService", "onStartCommand called, action=${intent?.action}")
+        
         when (intent?.action) {
             ACTION_START_CAPTURE -> {
-                startForeground(NOTIFICATION_ID, createNotification())
-                
-                val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, -1)
-                val resultData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableExtra(EXTRA_RESULT_DATA, Intent::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableExtra(EXTRA_RESULT_DATA)
-                }
-                
-                if (resultCode != -1 && resultData != null) {
-                    captureManager.initializeProjection(resultCode, resultData)
+                try {
+                    startForeground(NOTIFICATION_ID, createNotification())
+                    android.util.Log.d("ScreenCaptureService", "Foreground started")
+                    
+                    val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, -1)
+                    val resultData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        intent.getParcelableExtra(EXTRA_RESULT_DATA, Intent::class.java)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        intent.getParcelableExtra(EXTRA_RESULT_DATA)
+                    }
+                    
+                    android.util.Log.d("ScreenCaptureService", "resultCode=$resultCode, resultData=${resultData != null}")
+                    
+                    if (resultCode != -1 && resultData != null) {
+                        captureManager.initializeProjection(resultCode, resultData)
+                        android.util.Log.d("ScreenCaptureService", "Projection initialized, isInitialized=${captureManager.isInitialized()}")
+                    } else {
+                        android.util.Log.e("ScreenCaptureService", "Invalid result code or data")
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("ScreenCaptureService", "Error starting capture: ${e.message}", e)
                 }
             }
             ACTION_STOP_CAPTURE -> {
+                android.util.Log.d("ScreenCaptureService", "Stopping capture")
                 captureManager.stopProjection()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
