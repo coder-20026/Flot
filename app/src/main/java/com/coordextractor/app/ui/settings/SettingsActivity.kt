@@ -5,9 +5,7 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.coordextractor.app.R
 import com.coordextractor.app.databinding.ActivitySettingsBinding
-import com.coordextractor.app.util.Constants
 import com.coordextractor.app.util.PreferencesManager
-import com.google.android.material.slider.Slider
 
 /**
  * Settings Activity for app configuration
@@ -62,7 +60,7 @@ class SettingsActivity : AppCompatActivity() {
         // Capture interval slider
         binding.sliderCaptureInterval.addOnChangeListener { _, value, fromUser ->
             if (fromUser) {
-                prefsManager.captureInterval = value.toLong()
+                prefsManager.captureInterval = value.toInt()
                 binding.tvCaptureIntervalValue.text = getString(R.string.interval_ms_format, value.toInt())
             }
         }
@@ -70,7 +68,7 @@ class SettingsActivity : AppCompatActivity() {
         // ROI Width slider
         binding.sliderRoiWidth.addOnChangeListener { _, value, fromUser ->
             if (fromUser) {
-                prefsManager.roiWidthPercent = value / 100f
+                prefsManager.roiWidthPercent = value.toInt()
                 binding.tvRoiWidthValue.text = getString(R.string.percent_format, value.toInt())
             }
         }
@@ -78,7 +76,7 @@ class SettingsActivity : AppCompatActivity() {
         // ROI Height slider
         binding.sliderRoiHeight.addOnChangeListener { _, value, fromUser ->
             if (fromUser) {
-                prefsManager.roiHeightPercent = value / 100f
+                prefsManager.roiHeightPercent = value.toInt()
                 binding.tvRoiHeightValue.text = getString(R.string.percent_format, value.toInt())
             }
         }
@@ -86,7 +84,7 @@ class SettingsActivity : AppCompatActivity() {
         // Confidence threshold slider
         binding.sliderConfidenceThreshold.addOnChangeListener { _, value, fromUser ->
             if (fromUser) {
-                prefsManager.ocrConfidenceThreshold = value / 100f
+                prefsManager.ocrConfidenceThreshold = value.toInt()
                 binding.tvConfidenceValue.text = getString(R.string.percent_format, value.toInt())
             }
         }
@@ -107,31 +105,29 @@ class SettingsActivity : AppCompatActivity() {
             
             // Load sliders
             sliderCaptureInterval.value = prefsManager.captureInterval.toFloat()
-            tvCaptureIntervalValue.text = getString(R.string.interval_ms_format, prefsManager.captureInterval.toInt())
+            tvCaptureIntervalValue.text = getString(R.string.interval_ms_format, prefsManager.captureInterval)
             
-            sliderRoiWidth.value = (prefsManager.roiWidthPercent * 100)
-            tvRoiWidthValue.text = getString(R.string.percent_format, (prefsManager.roiWidthPercent * 100).toInt())
+            sliderRoiWidth.value = prefsManager.roiWidthPercent.toFloat()
+            tvRoiWidthValue.text = getString(R.string.percent_format, prefsManager.roiWidthPercent)
             
-            sliderRoiHeight.value = (prefsManager.roiHeightPercent * 100)
-            tvRoiHeightValue.text = getString(R.string.percent_format, (prefsManager.roiHeightPercent * 100).toInt())
+            sliderRoiHeight.value = prefsManager.roiHeightPercent.toFloat()
+            tvRoiHeightValue.text = getString(R.string.percent_format, prefsManager.roiHeightPercent)
             
-            sliderConfidenceThreshold.value = (prefsManager.ocrConfidenceThreshold * 100)
-            tvConfidenceValue.text = getString(R.string.percent_format, (prefsManager.ocrConfidenceThreshold * 100).toInt())
+            sliderConfidenceThreshold.value = prefsManager.ocrConfidenceThreshold.toFloat()
+            tvConfidenceValue.text = getString(R.string.percent_format, prefsManager.ocrConfidenceThreshold)
         }
     }
     
     private fun resetToDefaults() {
-        with(Constants.Defaults) {
-            prefsManager.apply {
-                realtimeMode = REALTIME_MODE
-                captureInterval = CAPTURE_INTERVAL_MS
-                roiWidthPercent = ROI_WIDTH_PERCENT
-                roiHeightPercent = ROI_HEIGHT_PERCENT
-                autoCopy = AUTO_COPY
-                vibrateOnSuccess = VIBRATE_ON_SUCCESS
-                soundOnSuccess = SOUND_ON_SUCCESS
-                ocrConfidenceThreshold = OCR_CONFIDENCE_THRESHOLD
-            }
+        prefsManager.apply {
+            realtimeMode = false
+            captureInterval = PreferencesManager.DEFAULT_CAPTURE_INTERVAL
+            roiWidthPercent = PreferencesManager.DEFAULT_ROI_WIDTH_PERCENT
+            roiHeightPercent = PreferencesManager.DEFAULT_ROI_HEIGHT_PERCENT
+            autoCopy = false
+            vibrateOnSuccess = true
+            soundOnSuccess = false
+            ocrConfidenceThreshold = PreferencesManager.DEFAULT_OCR_CONFIDENCE_THRESHOLD
         }
         loadSettings()
     }
