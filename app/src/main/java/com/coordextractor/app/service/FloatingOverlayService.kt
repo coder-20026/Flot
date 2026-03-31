@@ -91,31 +91,54 @@ class FloatingOverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        android.util.Log.d("FloatingOverlay", "onCreate called")
         try {
             windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+            
+            // Remove any existing overlays before creating new ones
+            removeOverlays()
+            
             setupFloatingButton()
+            android.util.Log.d("FloatingOverlay", "onCreate completed successfully")
         } catch (e: Exception) {
-            android.util.Log.e("FloatingOverlay", "Error in onCreate: ${e.message}")
+            android.util.Log.e("FloatingOverlay", "Error in onCreate: ${e.message}", e)
+            Toast.makeText(this, "Failed to create floating button: ${e.message}", Toast.LENGTH_LONG).show()
             stopSelf()
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        android.util.Log.d("FloatingOverlay", "onStartCommand called, action=${intent?.action}")
+        
         try {
             // Start foreground first to prevent ANR
             startForeground(NOTIFICATION_ID, createNotification())
+            android.util.Log.d("FloatingOverlay", "Foreground started")
             
             // Mark service as ready after foreground started
             isServiceReady = true
+            
+            // Ensure floating button is visible
+            floatingButtonBinding?.root?.let { view ->
+                view.visibility = android.view.View.VISIBLE
+                view.alpha = 0.85f // Ready but inactive
+            }
+            
             updateButtonVisualState()
+            
+            // Log capture manager state
+            android.util.Log.d("FloatingOverlay", "CaptureManager initialized: ${captureManager.isInitialized()}")
             
             when (intent?.action) {
                 ACTION_CAPTURE -> performCapture()
-                ACTION_STOP -> stopSelf()
+                ACTION_STOP -> {
+                    android.util.Log.d("FloatingOverlay", "Stopping service")
+                    stopSelf()
+                }
                 ACTION_TOGGLE_REALTIME -> toggleRealtimeMode()
             }
         } catch (e: Exception) {
-            android.util.Log.e("FloatingOverlay", "Error in onStartCommand: ${e.message}")
+            android.util.Log.e("FloatingOverlay", "Error in onStartCommand: ${e.message}", e)
         }
         
         return START_STICKY
@@ -138,10 +161,12 @@ class FloatingOverlayService : Service() {
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupFloatingButton() {
+        android.util.Log.d("FloatingOverlay", "setupFloatingButton called")
         try {
             floatingButtonBinding = LayoutFloatingButtonBinding.inflate(
                 LayoutInflater.from(this)
             )
+            android.util.Log.d("FloatingOverlay", "Binding inflated")
 
             val params = createFloatingLayoutParams()
 
@@ -149,9 +174,11 @@ class FloatingOverlayService : Service() {
             val displayMetrics = resources.displayMetrics
             params.x = displayMetrics.widthPixels / 2 - 100
             params.y = displayMetrics.heightPixels / 3
+            android.util.Log.d("FloatingOverlay", "Position set: x=${params.x}, y=${params.y}")
 
             floatingButtonBinding?.root?.let { view ->
                 windowManager.addView(view, params)
+                android.util.Log.d("FloatingOverlay", "View added to WindowManager")
                 
                 // Initial state: button is inactive until service is ready
                 updateButtonVisualState()
@@ -242,8 +269,17 @@ class FloatingOverlayService : Service() {
      * Handle button click - activate button and perform action
      */
     private fun handleButtonClick() {
+        android.util.Log.d("FloatingOverlay", "handleButtonClick called, isServiceReady=$isServiceReady")
+        
         if (!isServiceReady) {
             Toast.makeText(this, R.string.wait_initializing, Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Check if capture is initialized
+        if (!captureManager.isInitialized()) {
+            android.util.Log.e("FloatingOverlay", "CaptureManager not initialized in handleButtonClick")
+            Toast.makeText(this, "Screen capture not ready. Please restart from app.", Toast.LENGTH_LONG).show()
             return
         }
         
@@ -339,13 +375,22 @@ class FloatingOverlayService : Service() {
     }
 
     private fun performCapture() {
-        if (isProcessing) return
+        if (isProcessing) {
+            android.util.Log.d("FloatingOverlay", "Already processing, skipping capture")
+            return
+        }
+        
+        android.util.Log.d("FloatingOverlay", "performCapture called, checking initialization...")
         
         if (!captureManager.isInitialized()) {
+            android.util.Log.e("FloatingOverlay", "CaptureManager not initialized!")
             Toast.makeText(this, R.string.error_no_permission, Toast.LENGTH_SHORT).show()
+            // Try to inform user to restart
+            Toast.makeText(this, "Please restart the service from app", Toast.LENGTH_LONG).show()
             return
         }
 
+        android.util.Log.d("FloatingOverlay", "Starting capture...")
         isProcessing = true
         updateButtonState(processing = true)
 
@@ -667,12 +712,29 @@ class FloatingOverlayService : Service() {
     }
 
     private fun removeOverlays() {
+        android.util.Log.d("FloatingOverlay", "removeOverlays called")
         try {
-            floatingButtonBinding?.root?.let { windowManager.removeView(it) }
-            resultCardBinding?.root?.let { windowManager.removeView(it) }
+            floatingButtonBinding?.root?.let { view ->
+                if (view.isAttachedToWindow) {
+                    windowManager.removeView(view)
+                    android.util.Log.d("FloatingOverlay", "Floating button removed")
+                }
+            }
         } catch (e: Exception) {
-            // Views might already be removed
+            android.util.Log.e("FloatingOverlay", "Error removing floating button: ${e.message}")
         }
+        
+        try {
+            resultCardBinding?.root?.let { view ->
+                if (view.isAttachedToWindow) {
+                    windowManager.removeView(view)
+                    android.util.Log.d("FloatingOverlay", "Result card removed")
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FloatingOverlay", "Error removing result card: ${e.message}")
+        }
+        
         floatingButtonBinding = null
         resultCardBinding = null
     }
