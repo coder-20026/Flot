@@ -24,9 +24,12 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
  * Manages app preferences using DataStore
  */
 @Singleton
-class PreferencesManager @Inject constructor(
-    @ApplicationContext private val context: Context
+class PreferencesManager private constructor(
+    private val context: Context
 ) {
+    @Inject
+    constructor(@ApplicationContext context: Context) : this(context as Context)
+    
     private val dataStore = context.dataStore
 
     companion object {
@@ -39,12 +42,26 @@ class PreferencesManager @Inject constructor(
         private val KEY_FIRST_LAUNCH = booleanPreferencesKey("first_launch")
         private val KEY_FLOATING_BUTTON_X = intPreferencesKey("floating_button_x")
         private val KEY_FLOATING_BUTTON_Y = intPreferencesKey("floating_button_y")
+        private val KEY_AUTO_COPY = booleanPreferencesKey("auto_copy")
+        private val KEY_VIBRATE_ON_SUCCESS = booleanPreferencesKey("vibrate_on_success")
+        private val KEY_SOUND_ON_SUCCESS = booleanPreferencesKey("sound_on_success")
+        private val KEY_OCR_CONFIDENCE_THRESHOLD = intPreferencesKey("ocr_confidence_threshold")
 
         // Defaults
         const val DEFAULT_ROI_WIDTH_PERCENT = 30
         const val DEFAULT_ROI_HEIGHT_PERCENT = 25
         const val DEFAULT_CAPTURE_INTERVAL = 500
         const val DEFAULT_THEME_MODE = "system"
+        const val DEFAULT_OCR_CONFIDENCE_THRESHOLD = 70
+        
+        @Volatile
+        private var INSTANCE: PreferencesManager? = null
+        
+        fun getInstance(context: Context): PreferencesManager {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: PreferencesManager(context.applicationContext).also { INSTANCE = it }
+            }
+        }
     }
 
     // Realtime Mode
@@ -127,6 +144,50 @@ class PreferencesManager @Inject constructor(
         }
     }
 
+    // Auto Copy
+    val autoCopyFlow: Flow<Boolean> = dataStore.data.map { preferences ->
+        preferences[KEY_AUTO_COPY] ?: false
+    }
+
+    var autoCopy: Boolean
+        get() = runBlocking { autoCopyFlow.first() }
+        set(value) = runBlocking {
+            dataStore.edit { it[KEY_AUTO_COPY] = value }
+        }
+
+    // Vibrate on Success
+    val vibrateOnSuccessFlow: Flow<Boolean> = dataStore.data.map { preferences ->
+        preferences[KEY_VIBRATE_ON_SUCCESS] ?: true
+    }
+
+    var vibrateOnSuccess: Boolean
+        get() = runBlocking { vibrateOnSuccessFlow.first() }
+        set(value) = runBlocking {
+            dataStore.edit { it[KEY_VIBRATE_ON_SUCCESS] = value }
+        }
+
+    // Sound on Success
+    val soundOnSuccessFlow: Flow<Boolean> = dataStore.data.map { preferences ->
+        preferences[KEY_SOUND_ON_SUCCESS] ?: false
+    }
+
+    var soundOnSuccess: Boolean
+        get() = runBlocking { soundOnSuccessFlow.first() }
+        set(value) = runBlocking {
+            dataStore.edit { it[KEY_SOUND_ON_SUCCESS] = value }
+        }
+
+    // OCR Confidence Threshold
+    val ocrConfidenceThresholdFlow: Flow<Int> = dataStore.data.map { preferences ->
+        preferences[KEY_OCR_CONFIDENCE_THRESHOLD] ?: DEFAULT_OCR_CONFIDENCE_THRESHOLD
+    }
+
+    var ocrConfidenceThreshold: Int
+        get() = runBlocking { ocrConfidenceThresholdFlow.first() }
+        set(value) = runBlocking {
+            dataStore.edit { it[KEY_OCR_CONFIDENCE_THRESHOLD] = value.coerceIn(0, 100) }
+        }
+
     // Reset all settings
     suspend fun resetToDefaults() {
         dataStore.edit { preferences ->
@@ -135,6 +196,10 @@ class PreferencesManager @Inject constructor(
             preferences[KEY_ROI_HEIGHT_PERCENT] = DEFAULT_ROI_HEIGHT_PERCENT
             preferences[KEY_CAPTURE_INTERVAL] = DEFAULT_CAPTURE_INTERVAL
             preferences[KEY_THEME_MODE] = DEFAULT_THEME_MODE
+            preferences[KEY_AUTO_COPY] = false
+            preferences[KEY_VIBRATE_ON_SUCCESS] = true
+            preferences[KEY_SOUND_ON_SUCCESS] = false
+            preferences[KEY_OCR_CONFIDENCE_THRESHOLD] = DEFAULT_OCR_CONFIDENCE_THRESHOLD
         }
     }
 }
