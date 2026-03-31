@@ -158,7 +158,8 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     getString(R.string.btn_start_service)
                 }
-                setIconResource(
+                icon = ContextCompat.getDrawable(
+                    this@MainActivity,
                     if (state.isServiceRunning) R.drawable.ic_stop else R.drawable.ic_play
                 )
             }
@@ -279,7 +280,8 @@ class MainActivity : AppCompatActivity() {
             val isVisible = cardSettings.isVisible
             cardSettings.isVisible = !isVisible
             
-            btnSettings.setIconResource(
+            btnSettings.icon = ContextCompat.getDrawable(
+                this@MainActivity,
                 if (!isVisible) R.drawable.ic_close else R.drawable.ic_settings
             )
         }
