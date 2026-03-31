@@ -61,6 +61,7 @@
     <string name="error_no_permission">Permission not granted</string>
     <string name="error_service_failed">Service failed to start</string>
     <string name="error_unknown">An unexpected error occurred</string>
+    <string name="wait_initializing">Please wait, initializing...</string>
 
     <!-- Real-time Mode -->
     <string name="realtime_active">Real-time mode active</string>
