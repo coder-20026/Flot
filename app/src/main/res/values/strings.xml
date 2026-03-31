@@ -88,4 +88,24 @@
     <string name="auto_copy_description">Automatically copy coordinates to clipboard</string>
     <string name="vibrate_on_success">Vibrate on Success</string>
     <string name="vibrate_description">Vibrate when coordinates are extracted</string>
+    <string name="sound_on_success">Sound on Success</string>
+    <string name="sound_description">Play a sound when coordinates are extracted</string>
+
+    <!-- Settings Capture Section -->
+    <string name="settings_capture">Capture Settings</string>
+    <string name="capture_interval">Capture Interval (ms)</string>
+    <string name="roi_width">ROI Width (%)</string>
+    <string name="roi_height">ROI Height (%)</string>
+
+    <!-- Settings OCR Section -->
+    <string name="settings_ocr">OCR Settings</string>
+    <string name="confidence_threshold">Confidence Threshold</string>
+    <string name="confidence_description">Minimum confidence level for OCR results</string>
+    <string name="reset_to_defaults">Reset to Defaults</string>
+
+    <!-- History Item Actions -->
+    <string name="copy">Copy</string>
+    <string name="open_in_maps">Open in Maps</string>
+    <string name="share">Share</string>
+    <string name="delete">Delete</string>
 </resources>
