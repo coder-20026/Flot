@@ -178,19 +178,17 @@ class MainActivity : AppCompatActivity() {
             // Permission states
             cardPermissions.isVisible = !state.allPermissionsGranted
             
-            permissionOverlay.apply {
-                ivPermissionStatus.setImageResource(
-                    if (state.hasOverlayPermission) R.drawable.ic_check else R.drawable.ic_error
-                )
-                btnGrantOverlay.isVisible = !state.hasOverlayPermission
-            }
+            // Overlay permission
+            ivPermissionStatus.setImageResource(
+                if (state.hasOverlayPermission) R.drawable.ic_check else R.drawable.ic_error
+            )
+            btnGrantOverlay.isVisible = !state.hasOverlayPermission
 
-            permissionNotification.apply {
-                ivNotificationStatus.setImageResource(
-                    if (state.hasNotificationPermission) R.drawable.ic_check else R.drawable.ic_error
-                )
-                btnGrantNotification.isVisible = !state.hasNotificationPermission
-            }
+            // Notification permission
+            ivNotificationStatus.setImageResource(
+                if (state.hasNotificationPermission) R.drawable.ic_check else R.drawable.ic_error
+            )
+            btnGrantNotification.isVisible = !state.hasNotificationPermission
 
             // Settings values
             sliderRoiWidth.value = state.roiWidthPercent.toFloat()
