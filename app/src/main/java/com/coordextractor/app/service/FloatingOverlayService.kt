@@ -70,6 +70,8 @@ class FloatingOverlayService : Service() {
     
     private var isProcessing = false
     private var isRealtimeMode = false
+    private var isServiceReady = false  // Track if service is fully initialized
+    private var isButtonActive = false  // Track button active state for visual feedback
     private var lastCoordinates: String? = null
 
     private var initialX: Int = 0
@@ -89,18 +91,33 @@ class FloatingOverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        setupFloatingButton()
+        try {
+            windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+            setupFloatingButton()
+        } catch (e: Exception) {
+            android.util.Log.e("FloatingOverlay", "Error in onCreate: ${e.message}")
+            stopSelf()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_CAPTURE -> performCapture()
-            ACTION_STOP -> stopSelf()
-            ACTION_TOGGLE_REALTIME -> toggleRealtimeMode()
+        try {
+            // Start foreground first to prevent ANR
+            startForeground(NOTIFICATION_ID, createNotification())
+            
+            // Mark service as ready after foreground started
+            isServiceReady = true
+            updateButtonVisualState()
+            
+            when (intent?.action) {
+                ACTION_CAPTURE -> performCapture()
+                ACTION_STOP -> stopSelf()
+                ACTION_TOGGLE_REALTIME -> toggleRealtimeMode()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FloatingOverlay", "Error in onStartCommand: ${e.message}")
         }
         
-        startForeground(NOTIFICATION_ID, createNotification())
         return START_STICKY
     }
 
@@ -108,82 +125,168 @@ class FloatingOverlayService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        serviceScope.cancel()
-        realtimeJob?.cancel()
-        removeOverlays()
+        isServiceReady = false
+        isButtonActive = false
+        try {
+            serviceScope.cancel()
+            realtimeJob?.cancel()
+            removeOverlays()
+        } catch (e: Exception) {
+            android.util.Log.e("FloatingOverlay", "Error in onDestroy: ${e.message}")
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupFloatingButton() {
-        floatingButtonBinding = LayoutFloatingButtonBinding.inflate(
-            LayoutInflater.from(this)
-        )
+        try {
+            floatingButtonBinding = LayoutFloatingButtonBinding.inflate(
+                LayoutInflater.from(this)
+            )
 
-        val params = createFloatingLayoutParams()
+            val params = createFloatingLayoutParams()
 
-        // Set initial position (bottom-right)
-        val displayMetrics = resources.displayMetrics
-        params.x = displayMetrics.widthPixels / 2 - 100
-        params.y = displayMetrics.heightPixels / 3
+            // Set initial position (center-right)
+            val displayMetrics = resources.displayMetrics
+            params.x = displayMetrics.widthPixels / 2 - 100
+            params.y = displayMetrics.heightPixels / 3
 
-        floatingButtonBinding?.root?.let { view ->
-            windowManager.addView(view, params)
-            
-            var isDragging = false
-            var longPressTriggered = false
-            val longPressRunnable = Runnable {
-                longPressTriggered = true
-                vibrate()
-            }
+            floatingButtonBinding?.root?.let { view ->
+                windowManager.addView(view, params)
+                
+                // Initial state: button is inactive until service is ready
+                updateButtonVisualState()
+                
+                var isDragging = false
+                var longPressTriggered = false
+                val longPressRunnable = Runnable {
+                    longPressTriggered = true
+                    vibrate()
+                }
 
-            view.setOnTouchListener { _, event ->
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        isDragging = false
-                        longPressTriggered = false
-                        initialX = params.x
-                        initialY = params.y
-                        initialTouchX = event.rawX
-                        initialTouchY = event.rawY
-                        view.handler?.postDelayed(longPressRunnable, LONG_PRESS_DURATION)
-                        true
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        val deltaX = (event.rawX - initialTouchX).toInt()
-                        val deltaY = (event.rawY - initialTouchY).toInt()
-                        
-                        if (kotlin.math.abs(deltaX) > DRAG_THRESHOLD || 
-                            kotlin.math.abs(deltaY) > DRAG_THRESHOLD) {
-                            isDragging = true
-                            view.handler?.removeCallbacks(longPressRunnable)
+                view.setOnTouchListener { _, event ->
+                    try {
+                        when (event.action) {
+                            MotionEvent.ACTION_DOWN -> {
+                                isDragging = false
+                                longPressTriggered = false
+                                initialX = params.x
+                                initialY = params.y
+                                initialTouchX = event.rawX
+                                initialTouchY = event.rawY
+                                view.handler?.postDelayed(longPressRunnable, LONG_PRESS_DURATION)
+                                
+                                // Visual feedback on touch
+                                view.animate().scaleX(0.9f).scaleY(0.9f).setDuration(100).start()
+                                true
+                            }
+                            MotionEvent.ACTION_MOVE -> {
+                                val deltaX = (event.rawX - initialTouchX).toInt()
+                                val deltaY = (event.rawY - initialTouchY).toInt()
+                                
+                                if (kotlin.math.abs(deltaX) > DRAG_THRESHOLD || 
+                                    kotlin.math.abs(deltaY) > DRAG_THRESHOLD) {
+                                    isDragging = true
+                                    view.handler?.removeCallbacks(longPressRunnable)
+                                }
+                                
+                                if (isDragging || longPressTriggered) {
+                                    params.x = initialX + deltaX
+                                    params.y = initialY + deltaY
+                                    try {
+                                        windowManager.updateViewLayout(view, params)
+                                    } catch (e: Exception) {
+                                        // View might be detached
+                                    }
+                                }
+                                true
+                            }
+                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                view.handler?.removeCallbacks(longPressRunnable)
+                                
+                                // Reset visual feedback
+                                view.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                                
+                                if (!isDragging && !longPressTriggered) {
+                                    // Single tap - activate and perform capture
+                                    handleButtonClick()
+                                } else if (longPressTriggered) {
+                                    // Long press ended - snap to edge
+                                    snapToEdge(params)
+                                }
+                                true
+                            }
+                            else -> false
                         }
-                        
-                        if (isDragging || longPressTriggered) {
-                            params.x = initialX + deltaX
-                            params.y = initialY + deltaY
-                            windowManager.updateViewLayout(view, params)
-                        }
-                        true
+                    } catch (e: Exception) {
+                        android.util.Log.e("FloatingOverlay", "Touch error: ${e.message}")
+                        false
                     }
-                    MotionEvent.ACTION_UP -> {
-                        view.handler?.removeCallbacks(longPressRunnable)
-                        
-                        if (!isDragging && !longPressTriggered) {
-                            // Single tap - perform capture
-                            performCapture()
-                        } else if (longPressTriggered) {
-                            // Long press ended - snap to edge
-                            snapToEdge(params)
-                        }
-                        true
+                }
+
+                // Setup realtime toggle button with safe click handling
+                floatingButtonBinding?.btnRealtime?.setOnClickListener {
+                    try {
+                        toggleRealtimeMode()
+                    } catch (e: Exception) {
+                        android.util.Log.e("FloatingOverlay", "Realtime toggle error: ${e.message}")
                     }
-                    else -> false
                 }
             }
-
-            // Setup realtime toggle button
-            floatingButtonBinding?.btnRealtime?.setOnClickListener {
-                toggleRealtimeMode()
+        } catch (e: Exception) {
+            android.util.Log.e("FloatingOverlay", "Setup floating button error: ${e.message}")
+            Toast.makeText(this, R.string.error_unknown, Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * Handle button click - activate button and perform action
+     */
+    private fun handleButtonClick() {
+        if (!isServiceReady) {
+            Toast.makeText(this, R.string.wait_initializing, Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Set button as active
+        if (!isButtonActive) {
+            isButtonActive = true
+            updateButtonVisualState()
+        }
+        
+        // Perform capture
+        performCapture()
+    }
+    
+    /**
+     * Update button visual state based on active/inactive status
+     */
+    private fun updateButtonVisualState() {
+        floatingButtonBinding?.apply {
+            try {
+                if (isServiceReady && isButtonActive) {
+                    // Active state - full opacity, green indicator with pulse
+                    root.alpha = 1.0f
+                    statusIndicator.isVisible = true
+                    
+                    // Apply pulse animation to status indicator
+                    val pulseAnim = android.view.animation.AnimationUtils.loadAnimation(
+                        this@FloatingOverlayService, R.anim.pulse
+                    )
+                    statusIndicator.startAnimation(pulseAnim)
+                    
+                } else if (isServiceReady) {
+                    // Ready but inactive - slightly dimmed, no indicator
+                    root.alpha = 0.85f
+                    statusIndicator.clearAnimation()
+                    statusIndicator.isVisible = false
+                } else {
+                    // Not ready - more dimmed, no indicator
+                    root.alpha = 0.6f
+                    statusIndicator.clearAnimation()
+                    statusIndicator.isVisible = false
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FloatingOverlay", "Update visual state error: ${e.message}")
             }
         }
     }
@@ -312,11 +415,30 @@ class FloatingOverlayService : Service() {
     }
 
     private fun toggleRealtimeMode() {
+        if (!isServiceReady) {
+            Toast.makeText(this, R.string.wait_initializing, Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        if (!captureManager.isInitialized()) {
+            Toast.makeText(this, R.string.error_no_permission, Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         isRealtimeMode = !isRealtimeMode
         
+        // Mark button as active when realtime mode is enabled
+        if (isRealtimeMode && !isButtonActive) {
+            isButtonActive = true
+        }
+        
         floatingButtonBinding?.apply {
-            btnRealtime.isSelected = isRealtimeMode
-            statusIndicator.isVisible = isRealtimeMode
+            try {
+                btnRealtime.isSelected = isRealtimeMode
+                statusIndicator.isVisible = isRealtimeMode
+            } catch (e: Exception) {
+                android.util.Log.e("FloatingOverlay", "Toggle UI error: ${e.message}")
+            }
         }
 
         if (isRealtimeMode) {
@@ -325,108 +447,144 @@ class FloatingOverlayService : Service() {
             realtimeJob?.cancel()
             realtimeJob = null
         }
+        
+        updateButtonVisualState()
     }
 
     private fun startRealtimeCapture() {
         realtimeJob?.cancel()
         realtimeJob = serviceScope.launch {
-            captureManager.continuousCapture(
-                preferencesManager.captureInterval.toLong()
-            ).collectLatest { bitmap ->
-                try {
-                    val processed = imageProcessor.processForOCR(
-                        bitmap,
-                        preferencesManager.roiWidthPercent,
-                        preferencesManager.roiHeightPercent
-                    )
-                    
-                    val ocrResult = ocrRepository.recognizeText(processed)
-                    val coordinates = textParser.extractCoordinates(ocrResult.fullText)
-                    
-                    // Only update if coordinates changed
-                    if (coordinates.success && 
-                        coordinates.formattedOutput != lastCoordinates) {
-                        lastCoordinates = coordinates.formattedOutput
-                        withContext(Dispatchers.Main) {
-                            showResult(ocrResult.fullText, coordinates)
+            try {
+                captureManager.continuousCapture(
+                    preferencesManager.captureInterval.toLong()
+                ).collectLatest { bitmap ->
+                    try {
+                        val processed = imageProcessor.processForOCR(
+                            bitmap,
+                            preferencesManager.roiWidthPercent,
+                            preferencesManager.roiHeightPercent
+                        )
+                        
+                        val ocrResult = ocrRepository.recognizeText(processed)
+                        val coordinates = textParser.extractCoordinates(ocrResult.fullText)
+                        
+                        // Only update if coordinates changed
+                        if (coordinates.success && 
+                            coordinates.formattedOutput != lastCoordinates) {
+                            lastCoordinates = coordinates.formattedOutput
+                            withContext(Dispatchers.Main) {
+                                showResult(ocrResult.fullText, coordinates)
+                            }
                         }
+                    } catch (e: Exception) {
+                        // Ignore individual frame errors in realtime mode
+                        android.util.Log.w("FloatingOverlay", "Realtime frame error: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    // Ignore errors in realtime mode
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FloatingOverlay", "Realtime capture error: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    isRealtimeMode = false
+                    floatingButtonBinding?.apply {
+                        btnRealtime.isSelected = false
+                        statusIndicator.isVisible = false
+                    }
+                    Toast.makeText(
+                        this@FloatingOverlayService,
+                        R.string.error_capture_failed,
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
     }
 
     private fun showResult(rawText: String, coordinates: CoordinateResult) {
-        if (resultCardBinding == null) {
-            setupResultCard()
-        }
+        try {
+            if (resultCardBinding == null) {
+                setupResultCard()
+            }
 
-        resultCardBinding?.apply {
-            if (coordinates.success) {
-                tvRawText.text = coordinates.rawMatch ?: rawText.take(100)
-                tvCoordinates.text = coordinates.formattedOutput
-                tvCoordinates.isVisible = true
-                btnCopy.isVisible = true
-                btnMaps.isVisible = true
-                ivStatus.setImageResource(R.drawable.ic_check)
-            } else {
-                tvRawText.text = if (rawText.isNotEmpty()) {
-                    rawText.take(150)
+            resultCardBinding?.apply {
+                if (coordinates.success) {
+                    tvRawText.text = coordinates.rawMatch ?: rawText.take(100)
+                    tvCoordinates.text = coordinates.formattedOutput
+                    tvCoordinates.isVisible = true
+                    btnCopy.isVisible = true
+                    btnMaps.isVisible = true
+                    ivStatus.setImageResource(R.drawable.ic_check)
                 } else {
-                    getString(R.string.no_coordinates_found)
+                    tvRawText.text = if (rawText.isNotEmpty()) {
+                        rawText.take(150)
+                    } else {
+                        getString(R.string.no_coordinates_found)
+                    }
+                    tvCoordinates.isVisible = false
+                    btnCopy.isVisible = false
+                    btnMaps.isVisible = false
+                    ivStatus.setImageResource(R.drawable.ic_error)
                 }
-                tvCoordinates.isVisible = false
-                btnCopy.isVisible = false
-                btnMaps.isVisible = false
-                ivStatus.setImageResource(R.drawable.ic_error)
-            }
 
-            // Setup button clicks
-            btnCopy.setOnClickListener {
-                coordinates.formattedOutput?.let { text ->
-                    copyToClipboard(text)
+                // Setup button clicks
+                btnCopy.setOnClickListener {
+                    try {
+                        coordinates.formattedOutput?.let { text ->
+                            copyToClipboard(text)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("FloatingOverlay", "Copy error: ${e.message}")
+                    }
                 }
-            }
 
-            btnMaps.setOnClickListener {
-                if (coordinates.latitude != null && coordinates.longitude != null) {
-                    openInMaps(coordinates.latitude, coordinates.longitude)
+                btnMaps.setOnClickListener {
+                    try {
+                        if (coordinates.latitude != null && coordinates.longitude != null) {
+                            openInMaps(coordinates.latitude, coordinates.longitude)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("FloatingOverlay", "Maps error: ${e.message}")
+                    }
                 }
-            }
 
-            btnClose.setOnClickListener {
-                hideResultCard()
-            }
+                btnClose.setOnClickListener {
+                    hideResultCard()
+                }
 
-            root.isVisible = true
-            animateResultCard(true)
+                root.isVisible = true
+                animateResultCard(true)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FloatingOverlay", "Show result error: ${e.message}")
         }
     }
 
     private fun setupResultCard() {
-        resultCardBinding = LayoutResultCardBinding.inflate(
-            LayoutInflater.from(this)
-        )
+        try {
+            resultCardBinding = LayoutResultCardBinding.inflate(
+                LayoutInflater.from(this)
+            )
 
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            } else {
-                @Suppress("DEPRECATION")
-                WindowManager.LayoutParams.TYPE_PHONE
-            },
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT
-        ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-        }
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                } else {
+                    @Suppress("DEPRECATION")
+                    WindowManager.LayoutParams.TYPE_PHONE
+                },
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            }
 
-        resultCardBinding?.root?.let { view ->
-            windowManager.addView(view, params)
+            resultCardBinding?.root?.let { view ->
+                windowManager.addView(view, params)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FloatingOverlay", "Setup result card error: ${e.message}")
+            resultCardBinding = null
         }
     }
 
@@ -456,9 +614,13 @@ class FloatingOverlayService : Service() {
     }
 
     private fun updateButtonState(processing: Boolean) {
-        floatingButtonBinding?.apply {
-            progressIndicator.isVisible = processing
-            ivCapture.isVisible = !processing
+        try {
+            floatingButtonBinding?.apply {
+                progressIndicator.isVisible = processing
+                ivCapture.isVisible = !processing
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FloatingOverlay", "Update button state error: ${e.message}")
         }
     }
 
