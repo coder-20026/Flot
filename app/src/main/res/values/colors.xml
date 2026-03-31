@@ -75,4 +75,13 @@
 
     <color name="card_background_dark">#2D2D2D</color>
     <color name="card_border_dark">#424242</color>
+
+    <!-- Icon Colors -->
+    <color name="icon_primary">#1565C0</color>
+    <color name="icon_secondary">#757575</color>
+    <color name="icon_on_primary">#FFFFFF</color>
+
+    <!-- Basic Colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
 </resources>
