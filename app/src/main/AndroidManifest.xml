@@ -60,17 +60,6 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
-        <!-- Notification Channel Provider -->
-        <provider
-            android:name="androidx.startup.InitializationProvider"
-            android:authorities="${applicationId}.androidx-startup"
-            android:exported="false"
-            tools:node="merge">
-            <meta-data
-                android:name="com.coordextractor.app.startup.NotificationInitializer"
-                android:value="androidx.startup" />
-        </provider>
-
     </application>
 
 </manifest>
