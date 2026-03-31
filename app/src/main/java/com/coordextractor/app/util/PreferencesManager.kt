@@ -24,12 +24,9 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
  * Manages app preferences using DataStore
  */
 @Singleton
-class PreferencesManager private constructor(
-    private val context: Context
+class PreferencesManager @Inject constructor(
+    @ApplicationContext private val context: Context
 ) {
-    @Inject
-    constructor(@ApplicationContext context: Context) : this(context as Context)
-    
     private val dataStore = context.dataStore
 
     companion object {
