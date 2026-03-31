@@ -280,9 +280,11 @@ class MainActivity : AppCompatActivity() {
             val isVisible = cardSettings.isVisible
             cardSettings.isVisible = !isVisible
             
-            btnSettings.icon = ContextCompat.getDrawable(
-                this@MainActivity,
-                if (!isVisible) R.drawable.ic_close else R.drawable.ic_settings
+            btnSettings.setImageDrawable(
+                ContextCompat.getDrawable(
+                    this@MainActivity,
+                    if (!isVisible) R.drawable.ic_close else R.drawable.ic_settings
+                )
             )
         }
     }
